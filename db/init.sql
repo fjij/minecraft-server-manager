@@ -18,7 +18,7 @@ CREATE TABLE backup (
   server_name TEXT NOT NULL REFERENCES server (name),
   created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   path TEXT NOT NULL,
-  PRIMARY KEY (server_name, time)
+  PRIMARY KEY (server_name, created)
 );
 
 CREATE TABLE preset (
