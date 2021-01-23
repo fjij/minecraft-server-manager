@@ -23,4 +23,14 @@ router.delete('/:name', async (req, res) => {
   res.send();
 });
 
+router.get('/:name/env', async (req, res) => {
+  const env = await control.getServerEnv(req.params.name);
+  res.send({ env });
+});
+
+router.put('/:name/env', async (req, res) => {
+  await control.putServerEnv(req.params.name, req.body.env);
+  res.send();
+});
+
 module.exports = router;

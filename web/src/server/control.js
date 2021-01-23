@@ -25,9 +25,27 @@ async function deleteServer(name) {
   await db.query('DELETE FROM server WHERE name = $1', [name]);
 };
 
+async function getServerEnv(name) {
+  const { rows } = await db.query(
+    'SELECT * FROM server_env WHERE server_name = $1',
+    [name]
+  );
+  return Object.fromEntries(rows.map(row => [row.key, row.value]));
+};
+
+async function putServerEnv(name, env) {
+  await db.query('DELETE FROM server_env WHERE server_name = $1', [name]);
+  await Promise.all(Object.entries(env).map(([key, value]) => db.query(
+    'INSERT INTO server_env (server_name, key, value) VALUES ($1, $2, $3)',
+    [name, key, value]
+  )));
+};
+
 module.exports = {
   getServers,
   getServer,
   putServer,
-  deleteServer
+  deleteServer,
+  getServerEnv,
+  putServerEnv
 };

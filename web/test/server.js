@@ -39,10 +39,8 @@ async function mockEnv(server, count = 2) {
 }
 
 async function clearServerTables() {
-  await Promise.all([
-    db.query('DELETE FROM server'),
-    db.query('DELETE FROM server_env'),
-  ]);
+  await db.query('DELETE FROM server_env');
+  await db.query('DELETE FROM server');
 }
 
 describe('Server', () => {
@@ -150,14 +148,19 @@ describe('Server', () => {
 
     it('should create a server\'s env for a new server', async () => {
       const server = await mockServer();
+      const env = {
+        'SOME_VARIABLE': '0',
+        'ANOTHER_VARIABLE': '2',
+      }
       const res = await chai.request(app).put(`/server/${server.name}/env`)
-        .send({
-          env: {
-            'SOME_VARIABLE': '0',
-            'ANOTHER_VARIABLE': '2',
-          }
-        });
+        .send({ env });
       res.should.have.status(200);
+      const { rows } = await db.query(
+        'SELECT * FROM server_env WHERE server_name = $1',
+        [server.name]
+      );
+      expect(Object.fromEntries(rows.map(rows => [rows.key, rows.value])))
+        .to.eql(env);
     });
 
     it('should update a server\'s env', async () => {
@@ -168,12 +171,11 @@ describe('Server', () => {
         .send({ env });
       res.should.have.status(200);
       const { rows } = await db.query(
-        'SELECT * FROM server_env WHERE name = $1',
+        'SELECT * FROM server_env WHERE server_name = $1',
         [server.name]
       );
-      const entries = Object.entries(env);
-      expect(rows.length).to.eql(entries.length);
-      rows.forEach(row => expect(entries).to.include([row.key, row.value]));
+      expect(Object.fromEntries(rows.map(rows => [rows.key, rows.value])))
+        .to.eql(env);
     });
 
     it('should clear a server\'s env when empty', async () => {
@@ -183,7 +185,7 @@ describe('Server', () => {
         .send({ env: {} });
       res.should.have.status(200);
       const { rows } = await db.query(
-        'SELECT * FROM server_env WHERE name = $1',
+        'SELECT * FROM server_env WHERE server_name = $1',
         [server.name]
       );
       expect(rows.length).to.eql(0);
