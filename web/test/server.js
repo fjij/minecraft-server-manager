@@ -24,6 +24,20 @@ async function mockServer() {
   return server;
 }
 
+let envSeed = 0;
+async function mockEnv(server, count = 2) {
+  const env = {};
+  for(let i = 0; i < count; i ++) {
+    env[`ENV${envSeed}`] = `VALUE${envSeed}`;
+    envSeed ++;
+  }
+  await Promise.all(Object.keys(env).map(async key => await db.query(
+    'INSERT INTO server_env (server_name, key, value) VALUES ($1, $2, $3)',
+    [server.name, key, env[key]]
+  )));
+  return env;
+}
+
 async function clearServerTables() {
   await Promise.all([
     db.query('DELETE FROM server'),
@@ -111,6 +125,65 @@ describe('Server', () => {
       res.should.have.status(200);
       const { rows } = await db.query(
         'SELECT * FROM server WHERE name = $1',
+        [server.name]
+      );
+      expect(rows.length).to.eql(0);
+    });
+
+  });
+
+  describe('GET server/:name/env', () => {
+
+    it('should get a server\'s env', async () => {
+      const server = await mockServer();
+      const env = await mockEnv(server);
+      const res = await chai.request(app).get(`/server/${server.name}/env`);
+      res.should.have.status(200);
+      expect(res.body).to.eql({
+        env
+      });
+    });
+
+  });
+
+  describe('PUT server/:name/env', () => {
+
+    it('should create a server\'s env for a new server', async () => {
+      const server = await mockServer();
+      const res = await chai.request(app).put(`/server/${server.name}/env`)
+        .send({
+          env: {
+            'SOME_VARIABLE': '0',
+            'ANOTHER_VARIABLE': '2',
+          }
+        });
+      res.should.have.status(200);
+    });
+
+    it('should update a server\'s env', async () => {
+      const server = await mockServer();
+      const env = await mockEnv(server);
+      env['PIZZA'] = 'yummy';
+      const res = await chai.request(app).put(`/server/${server.name}/env`)
+        .send({ env });
+      res.should.have.status(200);
+      const { rows } = await db.query(
+        'SELECT * FROM server_env WHERE name = $1',
+        [server.name]
+      );
+      const entries = Object.entries(env);
+      expect(rows.length).to.eql(entries.length);
+      rows.forEach(row => expect(entries).to.include([row.key, row.value]));
+    });
+
+    it('should clear a server\'s env when empty', async () => {
+      const server = await mockServer();
+      await mockEnv(server);
+      const res = await chai.request(app).put(`/server/${server.name}/env`)
+        .send({ env: {} });
+      res.should.have.status(200);
+      const { rows } = await db.query(
+        'SELECT * FROM server_env WHERE name = $1',
         [server.name]
       );
       expect(rows.length).to.eql(0);
