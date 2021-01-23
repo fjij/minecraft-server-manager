@@ -1,0 +1,26 @@
+{
+  "name": "public",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "mocha --timeout 10000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "pg": "^8.5.1",
+    "express-promise-router": "^4.0.1",
+    "body-parser": "^1.19.0",
+    "helmet": "^4.2.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "mocha": "^8.2.1",
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0"
+  }
+}

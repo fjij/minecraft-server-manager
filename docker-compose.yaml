@@ -10,3 +10,18 @@ services:
        - ./db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432" # host:container
+
+  web:
+    build: ./web
+    command: npm start
+    environment:
+      - PGUSER=postgres 
+      - PGHOST=db
+      - PGPASSWORD=password 
+      - PGDATABASE=postgres 
+      - PGPORT=5432 
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
