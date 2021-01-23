@@ -1,27 +1,29 @@
 create extension if not exists "uuid-ossp";
 
 CREATE TABLE server (
-  uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT UNIQUE NOT NULL,
+  name TEXT PRIMARY KEY NOT NULL,
+  created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   port INTEGER NOT NULL,
-  volume TEXT NOT NULL
+  path TEXT NOT NULL
 );
 
 CREATE TABLE server_env (
-  server_uuid UUID NOT NULL REFERENCES server (uuid),
+  server_name TEXT NOT NULL REFERENCES server (name),
   key TEXT NOT NULL,
   value TEXT NOT NULL,
-  PRIMARY KEY (server_uuid, key)
+  PRIMARY KEY (server_name, key)
 );
 
-CREATE TABLE server_backup (
-  server_uuid UUID NOT NULL REFERENCES server (uuid),
-  time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (server_uuid, time)
+CREATE TABLE backup (
+  server_name TEXT NOT NULL REFERENCES server (name),
+  created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  path TEXT NOT NULL,
+  PRIMARY KEY (server_name, time)
 );
 
 CREATE TABLE preset (
   uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   name TEXT UNIQUE NOT NULL
 );
 
