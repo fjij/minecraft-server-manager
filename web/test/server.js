@@ -3,6 +3,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const app = require('../src');
 const should = chai.should();
+const expect = chai.expect;
 
 chai.use(chaiHttp);
 
@@ -19,6 +20,7 @@ async function mockServer() {
     [server.name, server.created, server.port, server.path]
   );
   serverSeed ++;
+  server.created = JSON.parse(JSON.stringify(server.created));
   return server;
 }
 
@@ -68,7 +70,7 @@ describe('Server', () => {
       const server = {
         name: 'asdf',
         port: 1234,
-        name: '/srv/minecraft/asdf'
+        path: '/srv/minecraft/asdf'
       }
       const res = await chai.request(app).put(`/server/${server.name}`).send({
         server
@@ -79,7 +81,8 @@ describe('Server', () => {
         [server.name]
       );
       expect(rows.length).to.eql(1);
-      expect(rows[0]).to.eql(server);
+      expect(rows[0].port).to.eql(server.port);
+      expect(rows[0].path).to.eql(server.path);
     });
 
     it('should update a server', async () => {
@@ -94,7 +97,8 @@ describe('Server', () => {
         [server.name]
       );
       expect(rows.length).to.eql(1);
-      expect(rows[0]).to.eql(server);
+      expect(rows[0].port).to.eql(server.port);
+      expect(rows[0].path).to.eql(server.path);
     });
 
   });
