@@ -4,6 +4,7 @@ const {
   ServerDoesNotExistError,
   ServerAlreadyExistsError
 } = require('./exceptions');
+const { loadBackup, createBackup } = require('../backup/control');
 
 async function getServers() {
   const { rows } = await db.query('SELECT * FROM server');
@@ -29,7 +30,7 @@ async function serverExists(name) {
   return rows.length > 0;
 };
 
-async function createServer(name, server, preset=null) {
+async function createServer(name, server, preset=null, backup=null) {
   if (await serverExists(name)) {
     throw new ServerAlreadyExistsError(name);
   }
@@ -49,6 +50,22 @@ async function createServer(name, server, preset=null) {
       [name, row.key, row.value]
     )));
   }
+  if (backup) {
+    await loadBackup(backup, volume);
+  }
+}
+
+async function backupServer(name, backup) {
+  const server = await getServer(name);
+  const date = new Date(Date.now());
+  const ye = date.getFullYear();
+  const mo = date.getMonth() + 1;
+  const da = date.getDate();
+  const ho = date.getHours();
+  const mi = date.getMinutes();
+  const se = date.getSeconds();
+  const backupName = `${server.name} ${ye}.${mo}.${da}.${ho}.${mi}.${se}`;
+  createBackup({ name: backupName }, server.volume);
 }
 
 async function updateServer(name, server) {
@@ -148,4 +165,5 @@ module.exports = {
   serverOn,
   getServerStatus,
   serverOff,
+  backupServer,
 };

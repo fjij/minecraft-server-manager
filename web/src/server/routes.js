@@ -14,7 +14,12 @@ router.get('/:name', async (req, res) => {
 });
 
 router.post('/:name', async (req, res) => {
-  await control.createServer(req.params.name, req.body.server, req.body.preset);
+  await control.createServer(
+    req.params.name,
+    req.body.server,
+    req.body.preset,
+    req.body.backup
+  );
   res.send();
 });
 
@@ -50,6 +55,11 @@ router.post('/:name/on', async (req, res) => {
 
 router.post('/:name/off', async (req, res) => {
   await control.serverOff(req.params.name);
+  res.send();
+});
+
+router.post('/:name/backup', async (req, res) => {
+  await control.backupServer(req.params.name);
   res.send();
 });
 

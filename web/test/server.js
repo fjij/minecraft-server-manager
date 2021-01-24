@@ -6,6 +6,9 @@ const app = require('../src');
 const should = chai.should();
 const expect = chai.expect;
 const presetTesting = require('./preset');
+const backupUtils = require('../src/backup/control.js');
+const fs = require('fs');
+const path = require('path');
 
 chai.use(chaiHttp);
 
@@ -113,6 +116,36 @@ describe('Server', () => {
       const { Volumes } = await docker.listVolumes({});
       expect(Volumes.map(v => v.Name)).to.include(rows[0].volume);
       await docker.getVolume(rows[0].volume).remove();
+    });
+
+    it( 'should create a server/volume from backup and backup existing servers', 
+      async () => {
+      fs.mkdirSync(path.join(process.env.BACKUP_PATH, 'asdf'));
+      fs.writeFileSync(path.join(process.env.BACKUP_PATH, 'asdf', 'hi'), 'hi');
+      const backup = { name: 'asdf' };
+      const server = { name: 'asdf', port: 1234, };
+      await docker.createImage({ fromImage: process.env.BACKUP_IMAGE });
+
+      const res = await chai.request(app).post(`/server/${server.name}`).send({
+        server, backup
+      });
+      console.log(res);
+      res.should.have.status(200);
+      const { rows } = await db.query(
+        'SELECT * FROM server WHERE name = $1', [server.name]
+      );
+      await backupUtils.createBackup({ name: 'test_backup' }, rows[0].volume);
+      expect(fs.existsSync(path.join(process.env.BACKUP_PATH, 'test_backup', 'hi')))
+        .to.be.true;
+      await docker.getVolume(rows[0].volume).remove();
+      fs.rmdirSync(
+        path.join(process.env.BACKUP_PATH, 'asdf'), 
+        {recursive: true}
+      );
+      fs.rmdirSync(
+        path.join(process.env.BACKUP_PATH, 'test_backup'), 
+        {recursive: true}
+      );
     });
 
     it('should fail if that server already exists', async () => {

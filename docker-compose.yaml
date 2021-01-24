@@ -20,9 +20,11 @@ services:
       - PORT=8000
       - SERVER_IMAGE=itzg/minecraft-server
       - BACKUP_PATH=/backup
+      - HOST_BACKUP_PATH=/tmp/minecraft-backup
+      - BACKUP_IMAGE=alpine
     volumes:
        - /var/run/docker.sock:/var/run/docker.sock
-       - ./backup:/backup
+       - /tmp/minecraft-backup:/backup
     ports:
       - "8000:8000"
     depends_on:
