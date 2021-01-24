@@ -22,14 +22,13 @@ CREATE TABLE backup (
 );
 
 CREATE TABLE preset (
-  uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  name TEXT UNIQUE NOT NULL
+  name TEXT UNIQUE NOT NULL,
+  created TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE preset_env (
-  preset_uuid UUID NOT NULL REFERENCES preset (uuid),
+  preset_name TEXT NOT NULL REFERENCES preset (name) ON DELETE CASCADE,
   key TEXT NOT NULL,
   value TEXT NOT NULL,
-  PRIMARY KEY (preset_uuid, key)
+  PRIMARY KEY (preset_name, key)
 );
