@@ -9,16 +9,21 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 let serverSeed = 0;
-async function mockServer() {
+async function mockServer({mockVolume}={}) {
+  let volume = 'some-volume';
+  if (mockVolume) {
+    const res = await docker.createVolume({ Driver: 'local' });
+    volume = res.name;
+  }
   const server = {
     name: `server${serverSeed}`,
     created: new Date(Date.now() + 1000*serverSeed),
     port: 1234 + serverSeed,
-    path: `/srv/minecraft/server${serverSeed}`
+    volume
   };
   await db.query(
-    'INSERT INTO server (name, created, port, path) VALUES ($1, $2, $3, $4)',
-    [server.name, server.created, server.port, server.path]
+    'INSERT INTO server (name, created, port, volume) VALUES ($1, $2, $3, $4)',
+    [server.name, server.created, server.port, server.volume]
   );
   serverSeed ++;
   server.created = JSON.parse(JSON.stringify(server.created));
@@ -57,7 +62,7 @@ describe('Server', () => {
       ];
       const res = await chai.request(app).get('/server');
       res.should.have.status(200);
-      res.body.should.be.eql({
+      res.body.should.eql({
         servers
       });
     });
@@ -79,23 +84,24 @@ describe('Server', () => {
 
   describe('PUT server/:name', () => {
 
-    it('should create a server', async () => {
+    it('should create a server and volume', async () => {
       const server = {
         name: 'asdf',
         port: 1234,
-        path: '/srv/minecraft/asdf'
       }
       const res = await chai.request(app).put(`/server/${server.name}`).send({
         server
       });
       res.should.have.status(200);
       const { rows } = await db.query(
-        'SELECT name, port, path FROM server WHERE name = $1',
+        'SELECT * FROM server WHERE name = $1',
         [server.name]
       );
       expect(rows.length).to.eql(1);
       expect(rows[0].port).to.eql(server.port);
-      expect(rows[0].path).to.eql(server.path);
+      const { Volumes } = await docker.listVolumes({});
+      expect(Volumes.map(v => v.Name)).to.include(rows[0].volume);
+      await docker.getVolume(rows[0].volume).remove();
     });
 
     it('should update a server', async () => {
@@ -106,20 +112,19 @@ describe('Server', () => {
       });
       res.should.have.status(200);
       const { rows } = await db.query(
-        'SELECT name, port, path FROM server WHERE name = $1',
+        'SELECT * FROM server WHERE name = $1',
         [server.name]
       );
       expect(rows.length).to.eql(1);
       expect(rows[0].port).to.eql(server.port);
-      expect(rows[0].path).to.eql(server.path);
     });
 
   });
 
   describe('DELETE server/:name', () => {
 
-    it('should delete a server', async () => {
-      const server = await mockServer();
+    it('should delete a server and volume', async () => {
+      const server = await mockServer({ mockVolume: true });
       const res = await chai.request(app).delete(`/server/${server.name}`);
       res.should.have.status(200);
       const { rows } = await db.query(
@@ -127,6 +132,8 @@ describe('Server', () => {
         [server.name]
       );
       expect(rows.length).to.eql(0);
+      const { Volumes } = await docker.listVolumes({});
+      expect(Volumes.map(v => v.Name)).to.not.include(server.volume);
     });
 
   });

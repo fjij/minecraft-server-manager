@@ -4,7 +4,7 @@ CREATE TABLE server (
   name TEXT PRIMARY KEY NOT NULL,
   created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   port INTEGER NOT NULL,
-  path TEXT NOT NULL
+  volume TEXT NOT NULL
 );
 
 CREATE TABLE server_env (

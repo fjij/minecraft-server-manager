@@ -15,14 +15,24 @@ async function getServer(name) {
 };
 
 async function putServer(name, server) {
+  const oldServer = await getServer(name);
+  let volume;
+  if (oldServer === undefined) {
+    const res = await docker.createVolume({ Driver: 'local' });
+    volume = res.name;
+  } else {
+    volume = oldServer.volume;
+  }
   await db.query(
-    'INSERT INTO server (name, port, path) VALUES ($1, $2, $3)'
-    + 'ON CONFLICT (name) DO UPDATE SET port = $2, path = $3', 
-    [name, server.port, server.path]
+    'INSERT INTO server (name, port, volume) VALUES ($1, $2, $3)'
+    + 'ON CONFLICT (name) DO UPDATE SET port = $2, volume = $3', 
+    [name, server.port, volume]
   );
 };
 
 async function deleteServer(name) {
+  const server = await getServer(name);
+  await docker.getVolume(server.volume).remove();
   await db.query('DELETE FROM server WHERE name = $1', [name]);
 };
 
@@ -60,7 +70,7 @@ async function serverOn(name) {
       Mounts: [
         {
           Target: '/data',
-          Source: `${server.name}_volume`,
+          Source: server.volume,
           Type: 'volume'
         }
       ]
