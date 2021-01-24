@@ -129,7 +129,6 @@ describe('Server', () => {
       const res = await chai.request(app).post(`/server/${server.name}`).send({
         server, backup
       });
-      console.log(res);
       res.should.have.status(200);
       const { rows } = await db.query(
         'SELECT * FROM server WHERE name = $1', [server.name]

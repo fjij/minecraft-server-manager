@@ -1,5 +1,7 @@
 const db = require('../db');
 const docker = require('../docker');
+const dateFormat = require('dateformat');
+
 const { 
   ServerDoesNotExistError,
   ServerAlreadyExistsError
@@ -58,13 +60,7 @@ async function createServer(name, server, preset=null, backup=null) {
 async function backupServer(name, backup) {
   const server = await getServer(name);
   const date = new Date(Date.now());
-  const ye = date.getFullYear();
-  const mo = date.getMonth() + 1;
-  const da = date.getDate();
-  const ho = date.getHours();
-  const mi = date.getMinutes();
-  const se = date.getSeconds();
-  const backupName = `${server.name} ${ye}.${mo}.${da}.${ho}.${mi}.${se}`;
+  const backupName = `${server.name} ${dateFormat(date, 'yyyymmdd-HHMMSS')}`;
   createBackup({ name: backupName }, server.volume);
 }
 
