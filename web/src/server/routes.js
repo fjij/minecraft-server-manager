@@ -33,4 +33,19 @@ router.put('/:name/env', async (req, res) => {
   res.send();
 });
 
+router.get('/:name/status', async (req, res) => {
+  const status = await control.getServerStatus(req.params.name);
+  res.send({ status });
+});
+
+router.post('/:name/on', async (req, res) => {
+  await control.serverOn(req.params.name);
+  res.send();
+});
+
+router.post('/:name/off', async (req, res) => {
+  await control.serverOff(req.params.name);
+  res.send();
+});
+
 module.exports = router;

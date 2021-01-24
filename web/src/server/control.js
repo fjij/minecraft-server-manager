@@ -1,4 +1,5 @@
 const db = require('../db');
+const docker = require('../docker');
 
 async function getServers() {
   const { rows } = await db.query('SELECT * FROM server');
@@ -41,11 +42,53 @@ async function putServerEnv(name, env) {
   )));
 };
 
+async function serverOn(name) {
+  const server = await getServer(name);
+  const env = await getServerEnv(name);
+  await docker.createContainer({ 
+    name: server.name,
+    Image: 'itzg/minecraft-server',
+    Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
+    HostConfig: {
+      PortBindings: {
+        '25565/tcp': [
+          {
+            HostPort: server.port.toString()
+          }
+        ]
+      },
+      Mounts: [
+        {
+          Target: '/data',
+          Source: `${server.name}_volume`,
+          Type: 'volume'
+        }
+      ]
+    }
+  });
+  await docker.getContainer(server.name).start();
+};
+
+async function getServerStatus(name) {
+  const server = await getServer(name);
+  const { State } = await docker.getContainer(server.name).inspect();
+  return State.Status;
+};
+
+async function serverOff(name) {
+  const server = await getServer(name);
+  await docker.getContainer(server.name).stop();
+  await docker.getContainer(server.name).remove();
+};
+
 module.exports = {
   getServers,
   getServer,
   putServer,
   deleteServer,
   getServerEnv,
-  putServerEnv
+  putServerEnv,
+  serverOn,
+  getServerStatus,
+  serverOff,
 };

@@ -3,13 +3,10 @@ version: "3"
 services:
   db:
     image: postgres
-    #restart: always
     environment:
       POSTGRES_PASSWORD: password
     volumes:
        - ./db:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432" # host:container
 
   web:
     build: ./web
@@ -21,6 +18,8 @@ services:
       - PGDATABASE=postgres 
       - PGPORT=5432 
       - PORT=8000
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"
     depends_on:

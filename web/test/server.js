@@ -1,4 +1,5 @@
 const db = require('../src/db');
+const docker = require('../src/docker');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const app = require('../src');
@@ -189,6 +190,60 @@ describe('Server', () => {
         [server.name]
       );
       expect(rows.length).to.eql(0);
+    });
+
+  });
+
+  describe('POST server/:name/on', () => {
+
+    it('should turn on a server', async () => {
+      const server = await mockServer();
+      const res = await chai.request(app).post(`/server/${server.name}/on`);
+      res.should.have.status(200);
+      const { State } = await docker.getContainer(server.name).inspect();
+      expect(State.Status).to.equal('running');
+      await docker.getContainer(server.name).stop();
+      await docker.getContainer(server.name).remove();
+    });
+
+  });
+
+  describe('Get server/:name/status', () => {
+
+    it('should get a server\'s status', async () => {
+      const server = await mockServer();
+      await docker.createImage({ fromImage: 'itzg/minecraft-server' });
+      await docker.createContainer({
+        name: server.name,
+        Image: 'itzg/minecraft-server',
+      });
+      await docker.getContainer(server.name).start();
+      const res = await chai.request(app).get(`/server/${server.name}/status`);
+      res.should.have.status(200);
+      expect(res.body.status).to.equal('running');
+      await docker.getContainer(server.name).stop();
+      await docker.getContainer(server.name).remove();
+    });
+
+  });
+
+  describe('POST server/:name/off', () => {
+
+    it('should turn off a server', async () => {
+      const server = await mockServer();
+      await docker.createImage({ fromImage: 'itzg/minecraft-server' });
+      await docker.createContainer({
+        name: server.name,
+        Image: 'itzg/minecraft-server',
+      });
+      await docker.getContainer(server.name).start();
+      const res = await chai.request(app).post(`/server/${server.name}/off`);
+      res.should.have.status(200);
+      const containers = await docker.listContainers({ all: true });
+      const containerNames = containers
+        .map(container => container.Names)
+        .reduce((a, b) => [...a, ...b]);
+      expect(containerNames).to.not.include(`/${server.name}`);
     });
 
   });

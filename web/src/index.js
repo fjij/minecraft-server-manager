@@ -3,6 +3,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mountRoutes = require('./routes');
+const docker = require('./docker');
+  
 
 const app = express();
 app.use(helmet());
@@ -11,8 +13,14 @@ app.use(bodyParser.json());
 mountRoutes(app);
 
 const port = process.env.PORT;
-app.listen(port, () => {
-  console.log(`App listening on port ${port}`);
-})
+
+async function main() {
+  await docker.createImage({ fromImage: 'itzg/minecraft-server' });
+  app.listen(port, () => {
+    console.log(`App listening on port ${port}`);
+  })
+}
+
+main();
 
 module.exports = app;
