@@ -59,7 +59,7 @@ router.post('/:name/off', async (req, res) => {
 });
 
 router.post('/:name/backup', async (req, res) => {
-  await control.backupServer(req.params.name);
+  await control.backupServer(req.params.name, req.body.backup);
   res.send();
 });
 
