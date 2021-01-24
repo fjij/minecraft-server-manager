@@ -18,6 +18,7 @@ services:
       - PGDATABASE=postgres 
       - PGPORT=5432 
       - PORT=8000
+      - SERVER_IMAGE=itzg/minecraft-server
     volumes:
        - /var/run/docker.sock:/var/run/docker.sock
     ports:

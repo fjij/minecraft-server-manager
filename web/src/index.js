@@ -17,7 +17,7 @@ app.use(errorHandler);
 const port = process.env.PORT;
 
 async function main() {
-  await docker.createImage({ fromImage: 'itzg/minecraft-server' });
+  await docker.createImage({ fromImage: process.env.SERVER_IMAGE });
   app.listen(port, () => {
     console.log(`App listening on port ${port}`);
   })

@@ -299,10 +299,10 @@ describe('Server', () => {
 
     it('should get a server\'s status', async () => {
       const server = await mockServer();
-      await docker.createImage({ fromImage: 'itzg/minecraft-server' });
+      await docker.createImage({ fromImage: process.env.SERVER_IMAGE });
       await docker.createContainer({
         name: server.name,
-        Image: 'itzg/minecraft-server',
+        Image: process.env.SERVER_IMAGE,
       });
       await docker.getContainer(server.name).start();
       const res = await chai.request(app).get(`/server/${server.name}/status`);
@@ -318,10 +318,10 @@ describe('Server', () => {
 
     it('should turn off a server', async () => {
       const server = await mockServer();
-      await docker.createImage({ fromImage: 'itzg/minecraft-server' });
+      await docker.createImage({ fromImage: process.env.SERVER_IMAGE });
       await docker.createContainer({
         name: server.name,
-        Image: 'itzg/minecraft-server',
+        Image: process.env.SERVER_IMAGE,
       });
       await docker.getContainer(server.name).start();
       const res = await chai.request(app).post(`/server/${server.name}/off`);

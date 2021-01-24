@@ -97,7 +97,7 @@ async function serverOn(name) {
   const env = await getServerEnv(name);
   await docker.createContainer({ 
     name: server.name,
-    Image: 'itzg/minecraft-server',
+    Image: process.env.SERVER_IMAGE,
     Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
     HostConfig: {
       PortBindings: {
