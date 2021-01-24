@@ -32,6 +32,7 @@ async function putServer(name, server) {
 
 async function deleteServer(name) {
   const server = await getServer(name);
+  await serverOff(name);
   await docker.getVolume(server.volume).remove();
   await db.query('DELETE FROM server WHERE name = $1', [name]);
 };
@@ -81,14 +82,18 @@ async function serverOn(name) {
 
 async function getServerStatus(name) {
   const server = await getServer(name);
-  const { State } = await docker.getContainer(server.name).inspect();
-  return State.Status;
+  try {
+    const { State } = await docker.getContainer(server.name).inspect();
+    return State.Status;
+  } catch {
+    return 'none';
+  }
 };
 
 async function serverOff(name) {
   const server = await getServer(name);
-  await docker.getContainer(server.name).stop();
-  await docker.getContainer(server.name).remove();
+  try { await docker.getContainer(server.name).stop(); } catch (e) { }
+  try { await docker.getContainer(server.name).remove(); } catch (e) { }
 };
 
 module.exports = {

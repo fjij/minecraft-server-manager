@@ -8,7 +8,7 @@ CREATE TABLE server (
 );
 
 CREATE TABLE server_env (
-  server_name TEXT NOT NULL REFERENCES server (name),
+  server_name TEXT NOT NULL REFERENCES server (name) ON DELETE CASCADE,
   key TEXT NOT NULL,
   value TEXT NOT NULL,
   PRIMARY KEY (server_name, key)
