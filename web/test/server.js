@@ -5,6 +5,7 @@ const chaiHttp = require('chai-http');
 const app = require('../src');
 const should = chai.should();
 const expect = chai.expect;
+const presetTesting = require('./preset');
 
 chai.use(chaiHttp);
 
@@ -88,6 +89,60 @@ describe('Server', () => {
           message: 'Server does not exist: imaginary'
         }
       });
+    });
+
+  });
+
+  describe('POST server/:name', () => {
+
+    it('should create a server and volume', async () => {
+      const server = {
+        name: 'asdf',
+        port: 1234,
+      }
+      const res = await chai.request(app).post(`/server/${server.name}`).send({
+        server
+      });
+      res.should.have.status(200);
+      const { rows } = await db.query(
+        'SELECT * FROM server WHERE name = $1',
+        [server.name]
+      );
+      expect(rows.length).to.eql(1);
+      expect(rows[0].port).to.eql(server.port);
+      const { Volumes } = await docker.listVolumes({});
+      expect(Volumes.map(v => v.Name)).to.include(rows[0].volume);
+      await docker.getVolume(rows[0].volume).remove();
+    });
+
+    it('should create a server from a preset', async () => {
+      const server = {
+        name: 'asdf',
+        port: 1234,
+      }
+      const preset = await presetTesting.mockPreset();
+      const env = await presetTesting.mockEnv(preset);
+      const res = await chai.request(app).post(`/server/${server.name}`).send({
+        server,
+        preset
+      });
+      res.should.have.status(200);
+      const { rows } = await db.query(
+        'SELECT * FROM server_env WHERE server_name = $1',
+        [server.name]
+      );
+      expect(Object.fromEntries(rows.map(rows => [rows.key, rows.value])))
+        .to.eql(env);
+
+      {
+        const { rows } = await db.query(
+          'SELECT * FROM server WHERE name = $1',
+          [server.name]
+        );
+        await docker.getVolume(rows[0].volume).remove();
+      }
+
+      await db.query('DELETE FROM preset_env');
     });
 
   });
@@ -218,7 +273,8 @@ describe('Server', () => {
       const res = await chai.request(app).post(`/server/${server.name}/on`);
       res.should.have.status(200);
       const { State } = await docker.getContainer(server.name).inspect();
-      expect(State.Status).to.equal('running');
+      expect(State.Status === 'running' || State.Status === 'exited')
+        .to.be.true;
       await docker.getContainer(server.name).stop();
       await docker.getContainer(server.name).remove();
     });

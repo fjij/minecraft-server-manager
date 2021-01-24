@@ -13,6 +13,11 @@ router.get('/:name', async (req, res) => {
   res.send({ server });
 });
 
+router.post('/:name', async (req, res) => {
+  await control.createServer(req.params.name, req.body.server, req.body.preset);
+  res.send();
+});
+
 router.put('/:name', async (req, res) => {
   await control.putServer(req.params.name, req.body.server);
   res.send();

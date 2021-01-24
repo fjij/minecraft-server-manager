@@ -18,24 +18,50 @@ async function getServer(name) {
   return rows[0];
 };
 
-async function putServer(name, server) {
-  let volume;
-  try {
-    const oldServer = await getServer(name);
-    volume = oldServer.volume;
-  } catch (e) {
-    if (e instanceof ServerDoesNotExistError) {
-      const res = await docker.createVolume({ Driver: 'local' });
-      volume = res.name;
-    } else {
-      throw e;
-    }
+async function serverExists(name) {
+  const { rows } = await db.query(
+    'SELECT * FROM server WHERE name = $1',
+    [name]
+  );
+  return rows.length > 0;
+};
+
+async function createServer(name, server, preset=null) {
+  if (await serverExists(name)) {
+    throw new ServerAlreadyExistsError(name);
   }
+  const res = await docker.createVolume({ Driver: 'local' });
+  const volume = res.name;
   await db.query(
-    'INSERT INTO server (name, port, volume) VALUES ($1, $2, $3)'
-    + 'ON CONFLICT (name) DO UPDATE SET port = $2, volume = $3', 
+    'INSERT INTO server (name, port, volume) VALUES ($1, $2, $3)',
     [name, server.port, volume]
   );
+  if (preset && preset.name) {
+    const { rows } = await db.query(
+      'SELECT * FROM preset_env WHERE preset_name = $1',
+      [preset.name]
+    );
+    await Promise.all(rows.map(row => db.query(
+      'INSERT INTO server_env (server_name, key, value) VALUES ($1, $2, $3)',
+      [name, row.key, row.value]
+    )));
+  }
+}
+
+async function updateServer(name, server) {
+  await getServer(name);
+  await db.query(
+    'UPDATE server SET port = $1 WHERE name = $2',
+    [server.port, name]
+  );
+}
+
+async function putServer(name, server) {
+  if (await serverExists(name)) {
+    await updateServer(name, server);
+  } else {
+    await createServer(name, server);
+  }
 };
 
 async function deleteServer(name) {
@@ -109,6 +135,9 @@ async function serverOff(name) {
 module.exports = {
   getServers,
   getServer,
+  createServer,
+  updateServer,
+  serverExists,
   putServer,
   deleteServer,
   getServerEnv,

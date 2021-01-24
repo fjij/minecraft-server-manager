@@ -158,3 +158,8 @@ describe('Preset', () => {
   });
 
 });
+
+module.exports = {
+  mockEnv,
+  mockPreset
+}
