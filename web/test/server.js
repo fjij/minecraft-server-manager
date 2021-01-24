@@ -80,6 +80,16 @@ describe('Server', () => {
       });
     });
 
+    it('should fail for a server that does not exist', async () => {
+      const res = await chai.request(app).get(`/server/imaginary`);
+      res.should.have.status(404);
+      expect(res.body).to.eql({
+        error: {
+          message: 'Server does not exist: imaginary'
+        }
+      });
+    });
+
   });
 
   describe('PUT server/:name', () => {

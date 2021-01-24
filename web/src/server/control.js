@@ -1,5 +1,6 @@
 const db = require('../db');
 const docker = require('../docker');
+const { ServerDoesNotExistError } = require('./exceptions');
 
 async function getServers() {
   const { rows } = await db.query('SELECT * FROM server');
@@ -11,17 +12,24 @@ async function getServer(name) {
     'SELECT * FROM server WHERE name = $1',
     [name]
   );
+  if (rows.length === 0) {
+    throw new ServerDoesNotExistError(name);
+  }
   return rows[0];
 };
 
 async function putServer(name, server) {
-  const oldServer = await getServer(name);
   let volume;
-  if (oldServer === undefined) {
-    const res = await docker.createVolume({ Driver: 'local' });
-    volume = res.name;
-  } else {
+  try {
+    const oldServer = await getServer(name);
     volume = oldServer.volume;
+  } catch (e) {
+    if (e instanceof ServerDoesNotExistError) {
+      const res = await docker.createVolume({ Driver: 'local' });
+      volume = res.name;
+    } else {
+      throw e;
+    }
   }
   await db.query(
     'INSERT INTO server (name, port, volume) VALUES ($1, $2, $3)'
@@ -38,6 +46,7 @@ async function deleteServer(name) {
 };
 
 async function getServerEnv(name) {
+  await getServer(name);
   const { rows } = await db.query(
     'SELECT * FROM server_env WHERE server_name = $1',
     [name]
@@ -46,6 +55,7 @@ async function getServerEnv(name) {
 };
 
 async function putServerEnv(name, env) {
+  await getServer(name);
   await db.query('DELETE FROM server_env WHERE server_name = $1', [name]);
   await Promise.all(Object.entries(env).map(([key, value]) => db.query(
     'INSERT INTO server_env (server_name, key, value) VALUES ($1, $2, $3)',

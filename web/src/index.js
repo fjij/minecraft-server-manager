@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mountRoutes = require('./routes');
 const docker = require('./docker');
+const errorHandler = require('./errorHandler');
   
 
 const app = express();
@@ -11,6 +12,7 @@ app.use(helmet());
 app.use(cors());
 app.use(bodyParser.json());
 mountRoutes(app);
+app.use(errorHandler);
 
 const port = process.env.PORT;
 
