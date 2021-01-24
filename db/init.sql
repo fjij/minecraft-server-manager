@@ -1,5 +1,3 @@
-create extension if not exists "uuid-ossp";
-
 CREATE TABLE server (
   name TEXT PRIMARY KEY NOT NULL,
   created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -12,13 +10,6 @@ CREATE TABLE server_env (
   key TEXT NOT NULL,
   value TEXT NOT NULL,
   PRIMARY KEY (server_name, key)
-);
-
-CREATE TABLE backup (
-  server_name TEXT NOT NULL REFERENCES server (name),
-  created TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  path TEXT NOT NULL,
-  PRIMARY KEY (server_name, created)
 );
 
 CREATE TABLE preset (
