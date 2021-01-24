@@ -115,6 +115,20 @@ describe('Server', () => {
       await docker.getVolume(rows[0].volume).remove();
     });
 
+    it('should fail if that server already exists', async () => {
+
+      const server = await mockServer();
+      const res = await chai.request(app).post(`/server/${server.name}`).send({
+        server
+      });
+      res.should.have.status(409);
+      expect(res.body).to.eql({
+        error: {
+          message: `Server already exists: ${server.name}`
+        }
+      });
+    });
+
     it('should create a server from a preset', async () => {
       const server = {
         name: 'asdf',

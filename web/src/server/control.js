@@ -1,6 +1,9 @@
 const db = require('../db');
 const docker = require('../docker');
-const { ServerDoesNotExistError } = require('./exceptions');
+const { 
+  ServerDoesNotExistError,
+  ServerAlreadyExistsError
+} = require('./exceptions');
 
 async function getServers() {
   const { rows } = await db.query('SELECT * FROM server');

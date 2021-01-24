@@ -6,6 +6,15 @@ class ServerDoesNotExistError extends Error {
   }
 }
 
+class ServerAlreadyExistsError extends Error {
+  constructor(name) {
+    super(`Server already exists: ${name}`);
+    this.name = 'ServerAlreadyExistsError';
+    this.statusCode = 409;
+  }
+}
+
 module.exports = {
-  ServerDoesNotExistError
+  ServerDoesNotExistError,
+  ServerAlreadyExistsError,
 }
