@@ -19,8 +19,10 @@ services:
       - PGPORT=5432 
       - PORT=8000
       - SERVER_IMAGE=itzg/minecraft-server
+      - BACKUP_PATH=/backup
     volumes:
        - /var/run/docker.sock:/var/run/docker.sock
+       - ./backup:/backup
     ports:
       - "8000:8000"
     depends_on:
