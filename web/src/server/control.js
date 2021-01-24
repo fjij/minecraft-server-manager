@@ -127,7 +127,10 @@ async function serverOn(name) {
           Source: server.volume,
           Type: 'volume'
         }
-      ]
+      ],
+      RestartPolicy: {
+        Name: 'unless-stopped'
+      }
     }
   });
   await docker.getContainer(server.name).start();
