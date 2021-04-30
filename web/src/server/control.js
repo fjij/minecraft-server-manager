@@ -61,8 +61,8 @@ async function backupServer(name, backup) {
   const server = await getServer(name);
   const date = new Date(Date.now());
   const backupName = (backup && backup.name)?
-    backup.name:`${server.name} ${dateFormat(date, 'yyyymmdd-HHMMss')}`;
-  createBackup(backup, server.volume);
+    backup.name:`${server.name}-${dateFormat(date, 'yyyymmdd-HHMMss')}`;
+  await createBackup({ name: backupName }, server.volume);
 }
 
 async function updateServer(name, server) {
