@@ -1,6 +1,6 @@
 # minecraft-server-manager
 
-API to manange multiple minecraft servers.
+API to manage multiple minecraft servers.
 
 It uses Docker to containerize and run multiple server instances, as well as
 Postgres to keep track of servers and configurations. 
